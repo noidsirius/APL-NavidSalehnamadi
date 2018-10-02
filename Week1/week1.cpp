@@ -56,7 +56,8 @@ bool sortbysec(const pair<string,int> &a, const pair<string,int> &b)
 } 
 
 string getWholeText(string file_name){
-	ifstream text_file(file_name);
+	ifstream text_file;
+	text_file.open(file_name.c_str());
 	if(text_file.fail()){
 		cerr <<"This file is not accessible" << endl;
 		exit(1);
