@@ -39,10 +39,7 @@ function StopWordFilter(wfapp){
 				me.stop_words.push(String.fromCharCode('a'.charCodeAt(0)+i));
 		}};
 	wfapp.register_for_load_event(this.load(this));
-
 	this.is_stop_word = function(word){
-		//console.log("StopWord",word);
-	//	console.log(this.stop_words);
 		return this.stop_words.includes(word);
 	}
 }
@@ -55,8 +52,6 @@ function DataStorage(wfapp, stop_word_filter){
 		me.data = content.replace(/[^0-9a-zA-Z]/gi, ' ').toLowerCase().match(/\S+/g);
 	};};
 	this.produce_words = function(me) {return function(){
-		//console.log("_-------");
-		//console.log(me.data[4]);
 		for(var j in me.data){
 			var word = me.data[j];
 			if(!me.stop_word_filter.is_stop_word(word))
@@ -78,9 +73,6 @@ function WordFrequencyCounter(wfapp, data_storage){
 		me.word_freqs[word] = me.word_freqs[word] ? me.word_freqs[word]+1 : 1;
 	};};
 	this.print_freqs = function(me){ return function(){
-//		console.log("G");
-//		console.log(me.word_freqs);
-		//return;
 		wf_list = Object.keys(me.word_freqs).map(function(key) { return [key, me.word_freqs[key]]})
 			wfs = wf_list.sort(function(a,b){ return a[1] < b[1] ? 1 : (a[1] == b[1] ? 0 : -1)});
 		for(i in wfs.slice(0, 25)){
@@ -91,57 +83,30 @@ function WordFrequencyCounter(wfapp, data_storage){
 	wfapp.register_for_end_event(this.print_freqs(this));
 }
 
-function read_file(path_to_file, callback){
-	fs.readFile(path_to_file, 'utf8', function(err, content){
-			if(err) {
-			console.log("Unable to read input file!");
-			return;
+function WordZCounter(wfapp, wf_counter){
+	this.wf_counter = wf_counter;
+	this.print_z_number = function(me){ return function(){
+		wf_list = Object.keys(me.wf_counter.word_freqs).map(function(key) { return [key, me.wf_counter.word_freqs[key]]})
+		var z_distinct = 0;
+		var z_total = 0;
+		for(i in wf_list){
+			if(wf_list[i][0].includes('z')){
+				z_distinct += 1;
+				z_total += wf_list[i][1];
 			}
-			callback(content.replace(/[^0-9a-zA-Z]/gi, ' ').toLowerCase().match(/\S+/g), frequencies);
-			});
+		}
+		console.log("Z distinct",z_distinct);
+		console.log("Z total",z_total);
+
+	};};
+	wfapp.register_for_end_event(this.print_z_number(this));	
 }
 
-function remove_stop_words(word_list, callback){
-	fs.readFile('../stop_words.txt', 'utf8', function(err, content){
-			if (err){
-			console.log("Unable to read stop words!");
-			return
-			}
-			stop_words = content.split(',')
-			for(i=0; i<26; i++)
-			stop_words.push(String.fromCharCode('a'.charCodeAt(0)+i));
-			callback(word_list.filter(function(val) { return !stop_words.includes(val)}), sort);
-			});
-}
-
-function frequencies(word_list, callback){
-	wf = {}
-	for(i in word_list){
-		word = word_list[i];
-		wf[word] = wf[word] ? wf[word]+1 : 1;
-	}
-	callback(Object.keys(wf).map(function(key) { return [key, wf[key]]}), print_text);
-}
-
-function sort(word_freqs, callback){
-	callback(word_freqs.sort(function(a,b){ return a[1] < b[1] ? 1 : (a[1] == b[1] ? 0 : -1)}));
-}
-
-function print_text(word_freqs, callback){
-	for(i in word_freqs.slice(0, 25)){
-		console.log(word_freqs[i][0] + " - " + word_freqs[i][1]);
-	}
-}
-
-//read_file(process.argv[2], remove_stop_words);
 framework = new WordFrequencyFramework();
 stop_word_filter = new StopWordFilter(framework);
 data_storage = new DataStorage(framework, stop_word_filter);
 word_freq_counter = new WordFrequencyCounter(framework, data_storage);
-//framework.load_event_handlers[0](process.argv[2]);
-//console.log(stop_word_filter.stop_words.length);
-//stop_word_filter.load();
-//console.log(stop_word_filter.stop_words);
+word_z_counter = new WordZCounter(framework, word_freq_counter);
 framework.run(process.argv[2]);
 
 
